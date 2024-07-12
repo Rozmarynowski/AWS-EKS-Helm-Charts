@@ -74,6 +74,22 @@ spec:
                   port: http
                 timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
               {{- end }}
+              {{- if .Values.grpcProbes.enabled }}
+              livenessProbe:
+                failureThreshold: {{ .Values.probes.failureThreshold }}
+                grpc:
+                  port: {{ .Values.grpcProbes.port }}
+                initialDelaySeconds: {{ .Values.grpcProbes.initialDelaySeconds }}
+                periodSeconds: {{ .Values.grpcProbes.periodSeconds }}
+                timeoutSeconds: {{ .Values.grpcProbes.timeoutSeconds }}
+              readinessProbe:
+                failureThreshold: {{ .Values.probes.failureThreshold }}
+                grpc:
+                  port: {{ .Values.grpcProbes.port }}
+                initialDelaySeconds: {{ .Values.grpcProbes.initialDelaySeconds }}
+                periodSeconds: {{ .Values.grpcProbes.periodSeconds }}
+                timeoutSeconds: {{ .Values.grpcProbes.timeoutSeconds }}
+              {{- end }}
               {{- if .Values.resources }}
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}

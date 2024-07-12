@@ -101,7 +101,13 @@ probes:
   path: ""
   failureThreshold: 10
   timeoutSeconds: 5
-
+grpcProbes:
+  enabled: false
+  port: 2379
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+  timeoutSeconds: 1
 autoscaling:
   enabled: false
   minReplicas: 1
