@@ -1,0 +1,96 @@
+{{- if eq .Values.type "cronjob" -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "eks-resources.fullname" . }}
+  labels:
+    {{- include "eks-resources.labels" . | nindent 4 }}
+    tier: cronjob
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "eks-resources.selectorLabels" . | nindent 12 }}
+            tier: pod
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "eks-resources.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          ttlSecondsAfterFinished:
+          containers:
+            - name: {{ include "eks-resources.fullname" . }}
+              image: {{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              {{- if .Values.args }}
+              args:
+                {{- range .Values.args }}
+                  - {{ . }}
+                {{- end }}  
+              {{- end }}
+              env:
+                - name: AWS__REGION
+                  value: {{ .Values.region }}
+                {{- range $k, $v := .Values.env }}
+                - name: {{ $k }}
+                  value: {{ $v | quote }}
+                {{- end }}
+                {{- range .Values.secrets }}
+                - name: {{ . }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "eks-resources.fullname" $ }}
+                      key: {{ . }}
+                {{- end }}
+              ports:
+                - name: http
+                  containerPort: {{ .Values.port }}
+                  protocol: TCP
+              {{- if .Values.probes.enabled }}
+              livenessProbe:
+                failureThreshold: {{ .Values.probes.failureThreshold }}
+                httpGet:
+                  path: {{ .Values.probes.path | default ( printf "%s/ping" ( .Values.ingress.path )) }}
+                  port: http
+                timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+              readinessProbe:
+                failureThreshold: {{ .Values.probes.failureThreshold }}
+                httpGet:
+                  path: {{ .Values.probes.path | default ( printf "%s/ping" ( .Values.ingress.path )) }}
+                  port: http
+                timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+              {{- end }}
+              {{- if .Values.resources }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              {{- end }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: {{ .Values.restartPolicy }}
+{{- end }}

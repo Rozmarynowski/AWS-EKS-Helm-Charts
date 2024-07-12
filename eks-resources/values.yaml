@@ -1,18 +1,40 @@
 # Default values for eks-resources.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+type: deployment
+
+general:
+  account: ""
+  application: ""
+  company: ""
+  environment: ""
+  suffix: ""
 
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: #aws ecr repository 
+  name: ""
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  source: csharp
   tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+# List of secrets from parameter store (as env)
+secrets: []
+env: {}
+
+region: eu-central-1
+schedule: ""
+activeDeadlineSeconds: 3600 
+startingDeadlineSeconds: 21600
+concurrencyPolicy: Allow # [Allow/Forbid/Replace]
+ttlSecondsAfterFinished: 86400 
+args: []
+
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -59,6 +81,9 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+
+restartPolicy: Always #Always/OnFailure/Never
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -71,14 +96,11 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
+probes:
+  enabled: true
+  path: ""
+  failureThreshold: 10
+  timeoutSeconds: 5
 
 autoscaling:
   enabled: false
